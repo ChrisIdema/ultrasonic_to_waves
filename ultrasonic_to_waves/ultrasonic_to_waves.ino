@@ -12,8 +12,9 @@
 #define SERVO_COUNT SENSOR_ACTUATOR_COUNT
 #define SERVO_MIN_ANGLE 0
 #define SERVO_MAX_ANGLE 90
-#define SERVO_SPEED 0
-
+#define SERVO_SPEED_Hz 0.5
+#define SERVO_SPEED_RAD_per_s (SERVO_SPEED_Hz*m_PI*2)
+#define SERVO_SPEED_RAD_per_ms (SERVO_SPEED_RAD_per_s *1000)
 
 static NewPing sonar[SONAR_NUM] = {     // Sensor object array.
   NewPing(2, 3, MAX_DISTANCE), // Each sensor's trigger pin, echo pin, and max distance to ping.
@@ -29,6 +30,7 @@ static volatile uint8_t currentSensor = 0;          // Keeps track of which sens
 static volatile uint16_t distance_copy[SONAR_NUM];         // Where the ping distances are stored.
 
 static Servo servos[SERVO_COUNT];  // create servo object to control a servo
+static uint16_t servo_t0[SERVO_COUNT];
 static int servo_positions[SERVO_COUNT] = {0};    // variable to store the servo position
 static const int servo_pins[SERVO_COUNT] = {10,11,12,13};
 
@@ -73,8 +75,10 @@ void loop() {
   //read sensors:
 
   int16_t dt = t - pingTimer; // use dt variable to account for overflow
+
+  bool pingTimer_triggered = dt>0;
   
-  if(dt>0){
+  if(pingTimer_triggered){
     pingTimer += PING_INTERVAL;
 
     sonar[currentSensor].timer_stop();//stop previous sensor
@@ -92,11 +96,11 @@ void loop() {
  
 
 
-//  if( (dt>0) && (currentSensor == 0) ){  // print every cycle
+//  if( pingTimer_triggered && (currentSensor == 0) ){  // print every cycle
 //    print_sensors();
 //  }
 
-//  if( dt>0 ){
+//  if( pingTimer_triggered ){
 //    print_sensors();
 //  }
 
@@ -105,9 +109,11 @@ void loop() {
    for(int i=0;i<SERVO_COUNT;++i){
     if(distance_copy[i] < 50){
       servo_positions[i] = 120;
+      //servo_positions[i] = sin((t-servo_t0[i])*0.1)*30+60;
     }
     else{
       servo_positions[i] = 60;
+      servo_t0[i] = t;
     }
    }
 
