@@ -30,14 +30,14 @@ static volatile uint16_t distance_copy[SONAR_NUM];         // Where the ping dis
 
 static Servo servos[SERVO_COUNT];  // create servo object to control a servo
 static int servo_positions[SERVO_COUNT] = {0};    // variable to store the servo position
-static const int servo_pins[SERVO_COUNT] = {0,1,2,3};
+static const int servo_pins[SERVO_COUNT] = {10,11,12,13};
 
 
 void setup() {
   Serial.begin(115200);
 
   for(int i=0;i<SERVO_COUNT;++i){
-    //servos[i].attach(servo_pins[i]);
+    servos[i].attach(servo_pins[i]);
   }
   
   uint16_t t = millis();
@@ -55,6 +55,16 @@ static void print_sensors() {
   }
   Serial.println();
 }
+
+static void print_servos() { 
+
+  for (uint8_t i = 0; i < SERVO_COUNT; i++) {
+    Serial.print(servo_positions[i]);
+    Serial.print(",");
+  }
+  Serial.println();
+}
+
 
 void loop() {
 
@@ -80,21 +90,33 @@ void loop() {
     sonar[currentSensor].ping_timer(echoCheck); 
   }
  
-  //process inputs, determine outputs
 
-  if( (dt>0) && (currentSensor == 0) ){  // print every cycle
-    print_sensors();
-  }
+
+//  if( (dt>0) && (currentSensor == 0) ){  // print every cycle
+//    print_sensors();
+//  }
 
 //  if( dt>0 ){
 //    print_sensors();
 //  }
+
+  //process inputs, determine outputs:
   
+   for(int i=0;i<SERVO_COUNT;++i){
+    if(distance_copy[i] < 50){
+      servo_positions[i] = 120;
+    }
+    else{
+      servo_positions[i] = 60;
+    }
+   }
 
   //write outputs:
 
+  print_servos();
+
   for(int i=0;i<SERVO_COUNT;++i){
-    //servos[i].write(servo_positions[i]); 
+    servos[i].write(servo_positions[i]); 
   }  
 }
 
