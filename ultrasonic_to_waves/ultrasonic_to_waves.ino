@@ -9,12 +9,17 @@
 #define MAX_DISTANCE 200 // Maximum distance (in cm) to ping.
 #define PING_INTERVAL 33 // Milliseconds between sensor pings (29ms is about the min to avoid cross-sensor echo).
 
+#define PRINT_INTERVAL 100
+
 #define SERVO_COUNT SENSOR_ACTUATOR_COUNT
-#define SERVO_MIN_ANGLE 0
-#define SERVO_MAX_ANGLE 90
-#define SERVO_SPEED_Hz 0.5
-#define SERVO_SPEED_RAD_per_s (SERVO_SPEED_Hz*m_PI*2)
-#define SERVO_SPEED_RAD_per_ms (SERVO_SPEED_RAD_per_s *1000)
+#define SERVO_CENTER_POSITION 90L
+#define SERVO_AMPLITUDE 30L
+#define SERVO_PERIOD_ms 1000L
+#define SERVO_PERIOD_DIV2_ms (SERVO_PERIOD_ms/2)
+#define SERVO_PERIOD_DIV4_ms (SERVO_PERIOD_ms/4)
+//#define SERVO_SPEED_Hz 0.5
+//#define SERVO_SPEED_RAD_per_s (SERVO_SPEED_Hz*m_PI*2)
+//#define SERVO_SPEED_RAD_per_ms (SERVO_SPEED_RAD_per_s *1000)
 
 static NewPing sonar[SONAR_NUM] = {     // Sensor object array.
   NewPing(2, 3, MAX_DISTANCE), // Each sensor's trigger pin, echo pin, and max distance to ping.
@@ -30,9 +35,27 @@ static volatile uint8_t currentSensor = 0;          // Keeps track of which sens
 static volatile uint16_t distance_copy[SONAR_NUM];         // Where the ping distances are stored.
 
 static Servo servos[SERVO_COUNT];  // create servo object to control a servo
+static bool distance_triggered[SERVO_COUNT];
 static uint16_t servo_t0[SERVO_COUNT];
 static int servo_positions[SERVO_COUNT] = {0};    // variable to store the servo position
 static const int servo_pins[SERVO_COUNT] = {10,11,12,13};
+
+ 
+static int16_t squared_sine(int32_t dt_ms){
+    int32_t y;
+
+    if(dt_ms < SERVO_PERIOD_DIV2_ms){
+      y = SERVO_AMPLITUDE - SERVO_AMPLITUDE*(dt_ms-SERVO_PERIOD_DIV4_ms)*(dt_ms-SERVO_PERIOD_DIV4_ms)/(SERVO_PERIOD_DIV4_ms*SERVO_PERIOD_DIV4_ms);
+    }
+    else{
+      dt_ms -= SERVO_PERIOD_DIV2_ms;
+      y = -SERVO_AMPLITUDE + SERVO_AMPLITUDE*(dt_ms-SERVO_PERIOD_DIV4_ms)*(dt_ms-SERVO_PERIOD_DIV4_ms)/(SERVO_PERIOD_DIV4_ms*SERVO_PERIOD_DIV4_ms);
+    }
+
+    y += SERVO_CENTER_POSITION;
+
+    return y;
+}
 
 
 void setup() {
@@ -40,6 +63,8 @@ void setup() {
 
   for(int i=0;i<SERVO_COUNT;++i){
     servos[i].attach(servo_pins[i]);
+    servo_positions[i] = SERVO_CENTER_POSITION;
+    servos[i].write(servo_positions[i]);     
   }
   
   uint16_t t = millis();
@@ -107,19 +132,46 @@ void loop() {
   //process inputs, determine outputs:
   
    for(int i=0;i<SERVO_COUNT;++i){
-    if(distance_copy[i] < 50){
-      servo_positions[i] = 120;
-      //servo_positions[i] = sin((t-servo_t0[i])*0.1)*30+60;
+    uint16_t servo_dt = t-servo_t0[i];  
+    if(distance_copy[i] < 50){ //triggered
+      if(!distance_triggered[i]){ // new trigger
+        distance_triggered[i] = true;
+        servo_t0[i] = t;//start here
+        servo_dt = 0; 
+      }
+      else{//old trigger        
+        //prevent overflow
+        if(servo_dt >= SERVO_PERIOD_ms){ 
+            servo_t0[i] += SERVO_PERIOD_ms;  
+            servo_dt = t-servo_t0[i]; 
+        }
+      }      
     }
     else{
-      servo_positions[i] = 60;
-      servo_t0[i] = t;
+      if(distance_triggered[i]){
+        //only stop at whole period
+        if(servo_dt >= SERVO_PERIOD_ms){ 
+          distance_triggered[i] = false;
+        }
+      }
     }
-   }
+
+    if(distance_triggered[i]){
+      servo_positions[i] = squared_sine(servo_dt);
+    }
+    else{
+      servo_positions[i] = SERVO_CENTER_POSITION;
+    }
+
+
+  }
+
+   
 
   //write outputs:
 
-  print_servos();
+  //print_servos();
+  //delay(100);
 
   for(int i=0;i<SERVO_COUNT;++i){
     servos[i].write(servo_positions[i]); 
