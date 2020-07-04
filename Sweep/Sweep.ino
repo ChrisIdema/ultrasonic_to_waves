@@ -9,23 +9,30 @@
 
 #include <Servo.h>
 
-Servo myservo;  // create servo object to control a servo
-// twelve servo objects can be created on most boards
+#define SERVO_COUNT 4
+#define DELAY 5//15
+Servo myservos[SERVO_COUNT];  // create servo object to control a servo
 
-int pos = 0;    // variable to store the servo position
+int pos;    // variable to store the servo position
 
 void setup() {
-  myservo.attach(10);  // attaches the servo on pin 9 to the servo object
+  for(int i=0;i<SERVO_COUNT;++i){
+    myservos[i].attach(10+i); 
+   }
+  
 }
 
 void loop() {
   for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+    for(int i=0;i<SERVO_COUNT;++i){
+    myservos[i].write(pos); 
+   }
+    delay(DELAY);                       // waits 15ms for the servo to reach the position
   }
   for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+    for(int i=0;i<SERVO_COUNT;++i){
+      myservos[i].write(pos); 
+     }
+    delay(DELAY);                       // waits 15ms for the servo to reach the position
   }
 }
