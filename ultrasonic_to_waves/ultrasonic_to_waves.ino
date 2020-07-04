@@ -6,7 +6,7 @@
 #define SENSOR_ACTUATOR_COUNT 4
 
 #define SONAR_NUM     SENSOR_ACTUATOR_COUNT // Number of sensors.
-#define MAX_DISTANCE 200 // Maximum distance (in cm) to ping.
+#define MAX_DISTANCE 150 // Maximum distance (in cm) to ping.
 #define PING_INTERVAL 33 // Milliseconds between sensor pings (29ms is about the min to avoid cross-sensor echo).
 
 #define PRINT_INTERVAL 100
@@ -121,9 +121,9 @@ void loop() {
  
 
 
-//  if( pingTimer_triggered && (currentSensor == 0) ){  // print every cycle
-//    print_sensors();
-//  }
+  if( pingTimer_triggered && (currentSensor == 0) ){  // print every cycle
+    //print_sensors();
+  }
 
 //  if( pingTimer_triggered ){
 //    print_sensors();
@@ -183,7 +183,7 @@ static void echoCheck() { // If ping received, set the sensor distance to array.
     distance_interrupt[currentSensor] = sonar[currentSensor].ping_result;
   }
   else{//timeout: distance too long
-     distance_interrupt[currentSensor] = MAX_DISTANCE+1;
+     distance_interrupt[currentSensor] = (MAX_DISTANCE+1)*US_ROUNDTRIP_CM;
   }
   busy[currentSensor] = false;
 }
