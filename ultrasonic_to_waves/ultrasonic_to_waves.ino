@@ -106,8 +106,7 @@ void loop() {
   static uint16_t servo_t0[SERVO_COUNT];
   int servo_angles[SERVO_COUNT];    // variable to store the servo position
   static uint16_t sonar_result_check_timer_ms;
-  static uint8_t current_sensor_index = 0;          // Keeps track of which sensor is active.
-
+  
   static uint16_t distance_cm[SONAR_NUM];         // Where the ping distances are stored.
   
   uint16_t t_ms = millis();
