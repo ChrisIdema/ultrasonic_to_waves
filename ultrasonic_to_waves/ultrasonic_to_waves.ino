@@ -15,7 +15,7 @@
 #define SERVO_ANGLE_AMPLITUDE 30L
 #define SERVO_PERIOD_ms 1000L
 
-#define TRIGGER_DISTANCE_cm 50
+#define TRIGGER_DISTANCE_cm 90
 
 #define SONAR_NUM     SENSOR_ACTUATOR_COUNT // Number of sensors.
 #define MAX_DISTANCE_cm 150 // Maximum distance in cm to be allowed to be detected ( will return MAX_DISTANCE_cm + 1 in case distance too long and MAX_DISTANCE_cm +2 in case of timeout)
